@@ -1,0 +1,251 @@
+---
+title: "data visualization"
+author: "Baran Abbasi"
+date: "2022-07-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+attach(alz)
+
+alz <- alz %>%
+  mutate(diag = case_when(
+    diagnosis == 0 ~ 0,
+    diagnosis != 0 ~ 1
+  ))
+
+colnames(alz)
+
+```
+
+```{r}
+ggplot(data = alz,
+       aes(x = rparcort)) + geom_boxplot() + facet_grid(diagnosis ~ .)
+
+boxplot(rparcort ~ diag, 
+        col = "powderblue", 
+        pch = 5, 
+        xlab = "diagnosis", 
+        ylab = "right parietal lobe cortical")
+```
+
+
+```{r}
+ran <-  sample(1:2700, 30)
+new_data <-  alz[ran, ]
+
+pairs(~rparcort + frcort + educ + age + female + diagnosis,
+      data = new_data,
+      main = "Scatterplot Matrix")
+```
+RIGHT PARIETAL V. FRONT CORTICAL
+```{r}
+plot(frcort, rparcort, pch = 5,xlab = "frontal lobe cortical", ylab = "right parietal lobe cortical", col = factor(diagnosis))
+legend("topleft", 
+       legend = c(0:2),
+       pch = 5,
+       col = factor(levels(factor(diagnosis)))
+       )
+
+cor(frcort, rparcort)
+cor.test(frcort, rparcort)
+
+```
+RIGHT PARIETAL V. EDUCATION
+```{r}
+alz %>%
+  ggplot(aes(x = educ, y = rparcort, color = as.factor(diag))) +
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = lm, se = FALSE) +
+  xlab("Education") +
+  ylab("Right Parietal Cortical Lobe") +
+  labs(color = "Diagnosis")
+
+legend("topleft", 
+       legend = c(0:1),
+       pch = 5,
+       col = as.factor(factor(diag))
+)
+
+cor(educ, rparcort)
+cor.test(educ, rparcort)
+
+```
+FRONT CORTICAL V. EDUCATION
+```{r}
+plot(educ, frcort, pch = 5, xlab = "education", ylab = "frontal cortical lobe", col = factor(diagnosis))
+legend("topleft", 
+       legend = c(0:2),
+       pch = 5,
+       col = factor(levels(factor(diagnosis)))
+       )
+
+cor(educ, frcort)
+cor.test(frcort, educ)
+
+```
+RIGHT PARIETAL V. AGE
+```{r}
+plot(age, rparcort, pch = 5, xlab = "age", ylab = "right parietal lobe cortical", col = factor(diagnosis))
+legend("topleft", 
+       legend = c(0:2),
+       pch = 5,
+       col = factor(levels(factor(diagnosis)))
+       )
+
+cor(age, rparcort)
+cor.test(age, rparcort)
+
+```
+FRONT CORTICAL V. AGE
+```{r}
+plot(age, frcort, pch = 5, xlab = "age", ylab = "front cortical lobe", col = factor(diagnosis))
+legend("topleft",
+       legend = c(0:2),
+       pch = 5,
+       col = factor(levels(factor(diagnosis)))
+       )
+
+cor(age, frcort)
+cor.test(frcort, age)
+
+```
+RIGHT PARIETAL V. FEMALE
+```{r}
+ggplot(data = alz,
+       aes(x = rparcort)) + geom_boxplot() + facet_grid(female ~ .)
+
+rparcortfem <- alz %>%
+  select(rparcort) %>%
+  filter(female == 1)
+
+rparcortnon <- alz %>%
+  select(rparcort) %>%
+  filter(female == 0)
+
+t.test(rparcortfem, rparcortnon)
+
+
+
+```
+
+
+FRONT CORTICAL V. FEMALE
+```{r}
+ggplot(data = alz,
+       aes(x = frcort)) + geom_boxplot() + facet_grid(female ~ .)
+
+frcortfem <- alz %>%
+  select(frcort) %>%
+  filter(female == 1)
+
+fem <- as.factor(female)
+
+
+frcortnon <- alz %>%
+  select(frcort) %>%
+  filter(female == 0)
+
+c(163.66 - qnorm(0.95) * sqrt(var(frcortfem)/length(frcortfem)), 163.66 + qnorm(0.95) * sqrt(var(frcortfem)/length(frcortfem)))
+
+prop.test(sum(frcortfem), n = length(frcortfem), p = 0.45, alternative = "two.sided", conf.level = 0.95)
+t.test(frcortfem, frcortnon)
+
+
+
+```
+
+```{r}
+
+ggplot(data = alz, aes(x = rparcort)) + geom_histogram(binwidth = 5) + facet_grid(diag ~ .)
+
+```
+```{r}
+alz <- alz %>%
+  mutate(combined = alz$rparcort + alz$frcort)
+
+glimpse(alz$combined)
+glimpse(rparcort)
+glimpse(frcort)
+
+
+ggplot(data = alz,
+       aes(x = combined)) + geom_boxplot() + facet_grid(diag ~ .)
+```
+
+
+```{r}
+cons <- glm(diag ~ rparcort + frcort + age + educ + female, data = alz)
+summary(cons)
+confint(cons)
+```
+
+
+```{r}
+
+
+###### Linear Regression 
+#### let's plot right parietal & frontal cortical volume versus age, female and 
+#### education separately
+
+
+plot(age, rparcort, pch = 5, col = "red")
+
+
+plot(educ, rparcort, pch = 5, col= "blue")
+cor.test(frcort, age)
+
+
+plot(female, rparcort, pch = 5, col = "pink")
+plot(rparcort, diag, pch = 5)
+
+
+
+plot(age, frcort, pch = 9, col = "red")
+plot(educ, frcort, pch = 9, col= "blue")
+plot(female, frcort, pch = 9, col = "pink")
+plot(frcort, diag, pch = 9)
+
+```
+
+
+```{r}
+
+#### linear model with age only
+lm.rpar <-lm (diag ~ rparcort)
+
+summary(lm.rpar)
+
+plot(rparcort, diag, pch = 16, col = "red")
+
+pred.rpar <- predict(lm.rpar)
+
+lines(rparcort, pred.rpar, lwd = 3)
+```
+
+```{r}
+alz %>%
+  ggplot(aes(x = rhippo, color = as.factor(diagnosis))) + geom_density()
+
+```
+
+```{r}
+alz %>%
+  ggplot(aes(x = educ)) + geom_boxplot() + facet_grid(diag ~ .)
+```
+
+
+```{r}
+summary(glm(diag ~ rparcort + frcort + age + educ + as.factor(female), famil = binomial))
+```
+
+
+
+
+

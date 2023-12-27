@@ -1,0 +1,108 @@
+---
+title: "capstonetraining&validation"
+author: "Baran Abbasi"
+date: "2022-07-27"
+output: html_document
+---
+
+
+
+```{r}
+
+####
+####
+####   logistic regression
+####
+####
+
+## Let's treat the binarized version of diagnosis as the response.
+
+attach(alz)
+summary(diagnosis)
+head(diagnosis)
+
+```
+
+
+```{r}
+
+### let's collapse the two factors of 1 and 2 into a `1`
+### There are many ways to do this in R
+### one of the most straightforward methods is to use the command "recode"
+### in the package "car":
+library(car)
+diagnosis.new <- recode(diagnosis,"c(1,2)='1';else='0'")
+diag.new <- as.factor(diagnosis.new)
+summary(diag.new)
+
+```
+
+```{r}
+
+#### let's build a logistic regression for diag.new as the response and 
+#### educ, age, naccicv, and female as predictors
+
+fem <- as.factor(female)
+
+diag.logistic <- glm(diag.new ~ rparcort +  frcort + csfvol + age + rhippo + traila + trailb + naccmmse + memunits + fem, family = binomial)
+#summary(diag.logistic)
+
+test <- glm(diag.new ~ rparcort +  frcort + csfvol + age + rhippo + traila + trailb + naccmmse + memunits + fem, family = binomial)
+
+summary(test)
+```
+
+
+```{r}
+#####
+##### cross-validation for model validation
+######
+
+#### create training and testing data
+
+#### library(tidyverse)
+#### library(caret)
+
+set.seed(1234)
+a = seq(1,2700,1)
+b = sample(a, 2200, replace = F)
+
+alz.logistic <- alz[,c("rparcort", "frcort", "csfvol", "age", "rhippo", "traila", "trailb", "naccmmse", "memunits")]
+alz.logistic <- cbind(diag.new, alz.logistic, fem)
+train.data <- alz.logistic[b,]
+test.data <- alz.logistic[-b,]
+```
+
+
+```{r}
+
+
+#### run the model on training data
+diag.logistic<-glm(diag.new ~ rparcort + frcort + csfvol + age + rhippo + traila + trailb + naccmmse + memunits + fem, family = binomial, data = train.data)
+
+
+```
+
+```{r}
+
+#### obtain the probability of diagnosis for the subjects in test data
+probability <- diag.logistic %>% 
+  predict(test.data, type = "response")
+head(probability)
+
+
+```
+
+
+```{r}
+
+#### Set the threshold as 0.5 for positive diagnosis 
+predicted.classes <- ifelse(probability > 0.5, "1", "0")
+
+```
+
+```{r}
+#### calculate the accuracy of your model's prediction
+mean(predicted.classes == diag.new[-b])
+```
+
